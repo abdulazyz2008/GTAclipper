@@ -1,38 +1,55 @@
 # ---- gta-clipper settings ----
+# Only the values you want to change need to be here; everything else uses
+# the built-in default. `clipper doctor` checks this file.
 game: "GTA 6"
 
-# One entry per streamer you have a campaign / permission for.
-# facecam = pixel rectangle of the webcam inside the ORIGINAL stream frame.
-# Leave facecam out and the clip uses a blurred-background layout instead.
+# One entry per streamer you have a campaign / written permission for.
+#   credit   - shown on the clip and in the description
+#   channel  - their live channel, used by `clipper watch`
+#   facecam  - pixel rectangle of the webcam inside the stream frame.
+#              Leave it out and clips use the blurred-background layout.
+#   frame    - the stream resolution the facecam numbers were measured on
 streamers:
   example:
     credit: "@example on Twitch"
+    channel: "https://www.twitch.tv/example"
     facecam: {x: 0, y: 0, w: 480, h: 270}
+    frame: {w: 1920, h: 1080}
     hashtags: "#gta6 #gtavi #gaming #shorts"
 
 ingest:
-  max_height: 1080        # lower to 720 to save disk on long VODs
+  mode: smart             # smart = download audio + only the clip sections; full = whole VOD
+  max_height: 1080
 
 detect:
-  bucket_sec: 5           # resolution of the excitement timeline
-  chat_lag: 8             # seconds chat reacts AFTER the moment
-  chat_weight: 0.6
+  chat_weight: 0.6        # chat vs. audio in the final score
   audio_weight: 0.4
-  clip_len: 35            # seconds per clip
-  pre_roll: 12            # seconds kept before the peak (the setup)
-  min_gap: 60             # minimum seconds between two picked moments
-  top_n: 30               # candidates sent to ranking
-  min_score: 0.5
+  clip_len: 35            # normal clip length in seconds
+  max_len: 55             # a clip may run this long while chat is still going
+  pre_roll: 12            # seconds kept before the moment (the setup)
+  min_score: 1.5          # lower = more clips, higher = only the big moments
+  top_n: 30               # candidates kept per VOD
+  hype_words: []          # extra emotes / words that mean "this is a moment"
 
 whisper:
   model: small            # tiny / base / small / medium
-  language: null          # e.g. "en" or "hi"; null = auto
+  language: null          # e.g. "en"; null = detect automatically
 
 rank:
-  model: claude-haiku-5-5 # needs ANTHROPIC_API_KEY; falls back to heuristics
+  model: claude-haiku-5-5 # only used with ANTHROPIC_API_KEY (not needed inside Claude)
   render_top: 12          # how many ranked clips get rendered for review
+
+edit:
+  layout: auto            # auto / split (facecam on top) / blur / crop
+  fps: 60
+  hook_style: box         # box (white label) or outline
+  caption_highlight: "#FFE600"
+  censor: false           # mask strong language in captions
+
+live:
+  min_score: 3.0          # live clips are cut as soon as a moment clears this
+  max_per_hour: 8
 
 youtube:
   privacy: private        # private / unlisted / public
-  category_id: "20"       # Gaming
   max_per_day: 10

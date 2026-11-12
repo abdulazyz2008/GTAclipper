@@ -1,1 +1,3 @@
-"""gta-clipper: find, cut, review and publish stream highlights."""
+"""gta-clipper: turn livestreams and VODs into reviewed, vertical, captioned clips."""
+
+__version__ = "2.0.0"

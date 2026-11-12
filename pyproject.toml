@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gta-clipper"
+dynamic = ["version"]
+description = "Turn livestreams and VODs into reviewed, vertical, captioned clips."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "pyyaml>=6",
+    "yt-dlp>=2024.8.6",
+    "chat-downloader>=0.2.8",
+]
+
+[project.optional-dependencies]
+captions = ["faster-whisper>=1.0"]
+live = ["streamlink>=6.5"]
+llm = ["anthropic>=1.0"]
+youtube = ["google-api-python-client>=2.100", "google-auth-oauthlib>=1.1"]
+all = [
+    "faster-whisper>=1.0",
+    "streamlink>=6.5",
+    "anthropic>=1.0",
+    "google-api-python-client>=2.100",
+    "google-auth-oauthlib>=1.1",
+]
+dev = ["pytest>=7"]
+
+[project.scripts]
+clipper = "clipper.cli:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "clipper.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["clipper*"]
+
+[tool.setuptools.package-data]
+clipper = ["assets/*.html", "assets/fonts/*", "skill/*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

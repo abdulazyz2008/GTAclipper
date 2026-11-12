@@ -1,9 +1,10 @@
-numpy
-pyyaml
-yt-dlp
-chat-downloader
-faster-whisper
-anthropic
-streamlit
-google-api-python-client
-google-auth-oauthlib
+# Everything, including the optional parts. `pip install -e ".[all]"` does the same.
+numpy>=1.24
+pyyaml>=6
+yt-dlp>=2024.8.6
+chat-downloader>=0.2.8
+faster-whisper>=1.0                 # captions
+streamlink>=6.5                     # live recording
+anthropic>=1.0                      # automatic ranking in `clipper run` (optional)
+google-api-python-client>=2.100     # YouTube upload
+google-auth-oauthlib>=1.1
