@@ -47,7 +47,7 @@ edit:
   censor: false           # mask strong language in captions
 
 live:
-  min_score: 3.0          # live clips are cut as soon as a moment clears this
+  min_score: 2.5          # live clips are cut as soon as a moment clears this
   max_per_hour: 8
 
 youtube:

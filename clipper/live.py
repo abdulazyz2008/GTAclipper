@@ -45,7 +45,7 @@ def source_command(source, cfg, simulate=False, speed=1.0):
     try:
         import streamlink  # noqa: F401
         return [sys.executable, "-m", "streamlink", "--stdout", "--loglevel", "error",
-                "--twitch-disable-ads", str(source), quality]
+                str(source), quality]
     except ImportError:
         return [sys.executable, "-m", "yt_dlp", "-q", "--no-warnings",
                 "-f", f"b[height<={max_h}]/b", "-o", "-", str(source)]
@@ -316,15 +316,19 @@ class Watcher:
             self.log(f"recording {self.source} -> {self.folder}")
             limit = self.max_minutes * 60 if self.max_minutes else None
             last = 0.0
-            while self.rec.alive() and not self.stop_flag.is_set():
-                self.stop_flag.wait(lv["poll_sec"])
-                total = self.step()
-                if total - last >= 300:
-                    last = total
-                    self.log(f"  {total / 60:.0f} min recorded, {len(self.made)} clip(s) so far")
-                if limit and total >= limit:
-                    self.log("  time limit reached")
-                    break
+            try:
+                while self.rec.alive() and not self.stop_flag.is_set():
+                    self.stop_flag.wait(lv["poll_sec"])
+                    total = self.step()
+                    if total - last >= 300:
+                        last = total
+                        self.log(f"  {total / 60:.0f} min recorded, "
+                                 f"{len(self.made)} clip(s) so far")
+                    if limit and total >= limit:
+                        self.log("  time limit reached")
+                        break
+            except KeyboardInterrupt:       # Ctrl+C: stop recording, keep what we have
+                self.log("  stopping - finishing the clips already recorded")
         finally:
             self.rec.stop()
             if self.chat is not None:

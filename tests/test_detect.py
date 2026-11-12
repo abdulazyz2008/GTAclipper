@@ -100,6 +100,7 @@ def test_live_mode_waits_until_the_clip_is_fully_recorded(dcfg):
     ("what time is the stream tomorrow", False), ("i like this game", False),
     ("hello", False), ("following since 2019", False), ("that boss was crazy hard", False),
     ("no i think he went left", False), ("bro what game is this", False),
+    ("I'll be back in five", False), ("we\u2019ll see", False),
 ])
 def test_hype_detection(text, hype):
     assert detect.is_hype(text, detect.hype_pattern()) is hype

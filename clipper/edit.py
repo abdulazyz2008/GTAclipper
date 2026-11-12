@@ -297,7 +297,7 @@ def render(media_path, start, end, out_path, cfg_edit, hook="", words=None,
 
     maps = ["-map", "[v]"]
     if info["has_audio"]:
-        chain = [f"afade=t=in:d=0.04", f"afade=t=out:st={max(0.0, length - 0.2):.3f}:d=0.2"]
+        chain = ["afade=t=in:d=0.04", f"afade=t=out:st={max(0.0, length - 0.2):.3f}:d=0.2"]
         if cfg_edit["loudness"] is not None:
             chain.append(f"loudnorm=I={cfg_edit['loudness']}:TP=-1.5:LRA=11")
         chain.append("aresample=48000")

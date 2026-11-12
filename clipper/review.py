@@ -216,6 +216,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         url = urlparse(self.path)
         # the key must come in a header: a plain cross-site form post cannot set one
+        self.close_connection = True      # replies below may leave the request body unread
         if not secrets.compare_digest((self.headers.get("X-Clipper-Key") or "").encode(),
                                       self.server.key.encode()):
             return self._send(403, {"error": "missing or wrong key"})

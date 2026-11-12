@@ -43,7 +43,8 @@ def hype_pattern(extra=()):
     extra = [re.escape(w.strip()) for w in extra if w and w.strip()]
     if extra:
         strong += "|" + "|".join(extra)
-    return (re.compile(rf"(?i)(?<!\w)(?:{strong})(?!\w)|{_HYPE_SYMBOLS}"),
+    # the apostrophes keep "I'll" and "we'll" from reading as the reaction "L"
+    return (re.compile(rf"(?i)(?<![\w'\u2019])(?:{strong})(?![\w'\u2019])|{_HYPE_SYMBOLS}"),
             re.compile(rf"(?i)\W*(?:{_HYPE_WEAK})(?:\W+(?:{_HYPE_WEAK}))*\W*"))
 
 

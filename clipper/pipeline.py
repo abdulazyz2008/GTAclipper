@@ -8,7 +8,7 @@ page all share:
 from pathlib import Path
 
 from . import detect, edit, ingest, media, rank, store, transcribe
-from .config import ensure_dirs, streamer_cfg
+from .config import ensure_dirs, safe_name, streamer_cfg
 
 
 class PipelineError(Exception):
@@ -232,7 +232,7 @@ def render_clip(con, clip_id, cfg, log=print):
         raise PipelineError(f"clip {clip_id} is already uploaded")
     streamer = cfg["streamers"].get(clip["streamer"])
     clip = ensure_video(con, clip, cfg, log)
-    out = ensure_dirs()["clips"] / f"{clip['vod_id']}_{clip['id']:04d}.mp4"
+    out = ensure_dirs()["clips"] / f"{safe_name(clip['vod_id'])}_{clip['id']:04d}.mp4"
     edit.render(clip["vod_path"], clip["start"], clip["end"], out, cfg["edit"],
                 hook=clip["hook"], words=clip["words"], streamer=streamer,
                 media_start=clip["media_start"], log=log)

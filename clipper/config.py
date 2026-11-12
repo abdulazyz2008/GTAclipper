@@ -117,7 +117,7 @@ DEFAULTS = {
         "segment_sec": 20,
         "poll_sec": 10,
         "keep_min": 30,             # minutes of raw recording kept on disk
-        "min_score": 3.0,           # live clips are cut the moment they clear this
+        "min_score": 2.5,           # live clips are cut the moment they clear this
         "max_per_hour": 8,
         "chat_offset": 0,           # extra seconds to shift live chat (positive = chat is late)
         "quality": "best",
@@ -403,7 +403,7 @@ edit:
   censor: false           # mask strong language in captions
 
 live:
-  min_score: 3.0          # live clips are cut as soon as a moment clears this
+  min_score: 2.5          # live clips are cut as soon as a moment clears this
   max_per_hour: 8
 
 youtube:
