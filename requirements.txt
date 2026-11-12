@@ -1,0 +1,9 @@
+numpy
+pyyaml
+yt-dlp
+chat-downloader
+faster-whisper
+anthropic
+streamlit
+google-api-python-client
+google-auth-oauthlib

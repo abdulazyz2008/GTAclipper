@@ -1,0 +1,38 @@
+# ---- gta-clipper settings ----
+game: "GTA 6"
+
+# One entry per streamer you have a campaign / permission for.
+# facecam = pixel rectangle of the webcam inside the ORIGINAL stream frame.
+# Leave facecam out and the clip uses a blurred-background layout instead.
+streamers:
+  example:
+    credit: "@example on Twitch"
+    facecam: {x: 0, y: 0, w: 480, h: 270}
+    hashtags: "#gta6 #gtavi #gaming #shorts"
+
+ingest:
+  max_height: 1080        # lower to 720 to save disk on long VODs
+
+detect:
+  bucket_sec: 5           # resolution of the excitement timeline
+  chat_lag: 8             # seconds chat reacts AFTER the moment
+  chat_weight: 0.6
+  audio_weight: 0.4
+  clip_len: 35            # seconds per clip
+  pre_roll: 12            # seconds kept before the peak (the setup)
+  min_gap: 60             # minimum seconds between two picked moments
+  top_n: 30               # candidates sent to ranking
+  min_score: 0.5
+
+whisper:
+  model: small            # tiny / base / small / medium
+  language: null          # e.g. "en" or "hi"; null = auto
+
+rank:
+  model: claude-haiku-5-5 # needs ANTHROPIC_API_KEY; falls back to heuristics
+  render_top: 12          # how many ranked clips get rendered for review
+
+youtube:
+  privacy: private        # private / unlisted / public
+  category_id: "20"       # Gaming
+  max_per_day: 10
