@@ -42,6 +42,8 @@ COLUMNS = {
     "status": "TEXT DEFAULT 'candidate'",
     "youtube_id": "TEXT DEFAULT ''",
     "uploaded_at": "TEXT DEFAULT ''",
+    "instagram_id": "TEXT DEFAULT ''",
+    "instagram_at": "TEXT DEFAULT ''",
     "created_at": "TEXT DEFAULT ''",
 }
 JSON_COLUMNS = ("words", "chat_sample")

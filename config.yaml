@@ -53,3 +53,7 @@ live:
 youtube:
   privacy: private        # private / unlisted / public
   max_per_day: 10
+
+instagram:
+  user_id: ""             # your Instagram professional account id (README, "Instagram setup")
+  max_per_day: 10

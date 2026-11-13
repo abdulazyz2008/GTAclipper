@@ -30,6 +30,12 @@ def _ids(con, values):
     return out
 
 
+def _mcp_entry():
+    """How an MCP client should start this program for the current workspace."""
+    return {"command": sys.executable,
+            "args": ["-m", "clipper", "--home", str(config.home()), "mcp"]}
+
+
 # ---- commands --------------------------------------------------------------
 
 
@@ -40,6 +46,11 @@ def cmd_init(a):
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(SKILL_SRC, dst)
         made.append(str(dst))
+    mcp_file = config.home() / ".mcp.json"
+    if a.force or not mcp_file.exists():
+        mcp_file.write_text(json.dumps({"mcpServers": {"clipper": _mcp_entry()}}, indent=2),
+                            encoding="utf-8")
+        made.append(str(mcp_file))
     for m in made:
         print("created", m)
     if not made:
@@ -269,11 +280,18 @@ def cmd_watch(a):
 def cmd_status(a):
     from . import live
     con = store.connect()
-    info = {"clips": store.counts(con), "watcher": live.latest_status()}
+    from . import autopilot
+    info = {"clips": store.counts(con), "watcher": live.latest_status(),
+            "autopilot": autopilot.read_status()}
     if a.json:
         print(json.dumps(info, indent=1))
         return
     print("clips: " + ", ".join(f"{k} {v}" for k, v in info["clips"].items()))
+    if info["autopilot"]:
+        print("autopilot (running):")
+        for name, s in info["autopilot"]["streamers"].items():
+            print(f"  {name:<14} {s['state']:<10} {len(s['clips'])} clip(s)"
+                  + (f"  problem: {s['error']}" if s["error"] else ""))
     w = info["watcher"]
     if w:
         print(f"last watch: {w['streamer']} {w['state']}, {w['recorded_min']} min recorded, "
@@ -325,8 +343,52 @@ def cmd_reject(a):
 
 def cmd_publish(a):
     from . import publish
-    publish.publish_youtube(store.connect(), config.load_config(), dry_run=a.dry_run,
-                            only=set(a.ids) or None)
+    cfg, con, only = config.load_config(), store.connect(), set(a.ids) or None
+    if a.to in ("all", "youtube"):
+        try:
+            publish.publish_youtube(con, cfg, dry_run=a.dry_run, only=only)
+        except publish.PublishError as e:
+            if a.to == "youtube":
+                raise
+            print(f"YouTube skipped: {e}")
+    if a.to == "instagram" or (a.to == "all" and publish.instagram_configured(cfg)):
+        publish.publish_instagram(con, cfg, dry_run=a.dry_run, only=only)
+
+
+def cmd_autopilot(a):
+    from .autopilot import Autopilot
+    Autopilot(config.load_config(), streamers=a.streamers, use_whisper=not a.no_whisper,
+              use_llm=not a.no_llm, max_minutes=a.minutes, once=a.once).run()
+
+
+def cmd_mcp(_):
+    from . import mcp_server
+    mcp_server.serve()
+
+
+def cmd_mcp_config(_):
+    entry = _mcp_entry()
+    print("Claude Desktop: Settings -> Developer -> Edit Config, and add this inside "
+          "\"mcpServers\":\n")
+    print(json.dumps({"clipper": entry}, indent=2))
+    print("\nClaude Code, from any folder:\n")
+    print("  claude mcp add clipper -- " + " ".join(
+        f'"{x}"' if " " in x else x for x in [entry["command"], *entry["args"]]))
+    print("\nRestart Claude afterwards. Then ask it, for example: \"start the clipper "
+          "autopilot\".")
+
+
+def cmd_jobs(a):
+    from . import jobs
+    if a.stop:
+        j = jobs.stop(a.stop)
+        print(f"asked {a.stop} to stop" if j else f"no job {a.stop}")
+        return
+    rows = jobs.list_jobs(15)
+    if not rows:
+        print("no background jobs yet")
+    for j in rows:
+        print(f"{j['id']}  {j['state']:<9} clipper {' '.join(j['args'])}")
 
 
 def cmd_export(_):
@@ -416,7 +478,22 @@ def build_parser():
     s = add("reject", cmd_reject, "reject clips by id")
     s.add_argument("ids", nargs="+", type=int)
 
-    s = add("publish", cmd_publish, "upload approved clips to YouTube")
+    s = add("autopilot", cmd_autopilot,
+            "watch every streamer with a channel; clip whoever goes live")
+    s.add_argument("--streamers", nargs="+", help="only these streamer keys")
+    s.add_argument("--minutes", type=float, help="stop after this many minutes")
+    s.add_argument("--once", action="store_true", help="check each streamer once, then stop")
+    s.add_argument("--no-llm", action="store_true", help="rank by detector score only")
+    s.add_argument("--no-whisper", action="store_true", help="skip captions")
+
+    add("mcp", cmd_mcp, "run as an MCP server so Claude can use clipper as tools")
+    add("mcp-config", cmd_mcp_config, "show how to connect Claude Desktop / Claude Code")
+    s = add("jobs", cmd_jobs, "list background jobs started through Claude")
+    s.add_argument("--stop", metavar="JOB_ID", help="ask a job to stop")
+
+    s = add("publish", cmd_publish, "upload approved clips to YouTube and Instagram")
+    s.add_argument("--to", choices=["all", "youtube", "instagram"], default="all",
+                   help="where to post (default: every platform that is set up)")
     s.add_argument("ids", nargs="*", type=int, help="only these clip ids")
     s.add_argument("--dry-run", action="store_true", help="show what would be uploaded")
     add("export", cmd_export, "copy approved clips + captions for TikTok / Instagram")

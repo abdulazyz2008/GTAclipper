@@ -25,6 +25,8 @@ from . import detect, media, pipeline, rank, store
 from .config import ensure_dirs, safe_name, streamer_cfg
 
 HOP = 0.25      # resolution of the stored loudness curve, seconds
+# several streams can be watched at once; transcribing and rendering take turns
+WORK_LOCK = threading.Lock()
 
 
 class LiveError(Exception):
@@ -246,10 +248,12 @@ class Watcher:
         meta = {"vod_id": self.session, "source": str(self.source), "streamer": self.streamer,
                 "audio_path": path, "audio_offset": begin, "vod_path": path,
                 "media_start": begin, "lo": begin, "hi": finish}
-        clip_id = pipeline.add_candidate(self.con, cand, meta, self.cfg, self.use_whisper, self.log)
-        pipeline.judge(self.con, [clip_id], self.streamer, self.cfg,
-                       use_llm=self.use_llm and rank.api_configured(), log=lambda *_: None)
-        row = pipeline.render_clip(self.con, clip_id, self.cfg, self.log)
+        with WORK_LOCK:
+            clip_id = pipeline.add_candidate(self.con, cand, meta, self.cfg, self.use_whisper,
+                                             self.log)
+            pipeline.judge(self.con, [clip_id], self.streamer, self.cfg,
+                           use_llm=self.use_llm and rank.api_configured(), log=lambda *_: None)
+            row = pipeline.render_clip(self.con, clip_id, self.cfg, self.log)
         self.log(f"  clip #{clip_id} ready for review: {row['start']:.0f}-{row['end']:.0f}s "
                  f"score {row['score']:.1f} (chat {row['chat_score']:.1f}, "
                  f"accel {row['accel_score']:.1f}, audio {row['audio_score']:.1f})")

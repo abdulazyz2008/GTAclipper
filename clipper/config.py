@@ -36,6 +36,7 @@ def paths():
         "export": d / "export",
         "live": d / "live",
         "frames": d / "frames",
+        "jobs": d / "jobs",
         "db": d / "clips.db",
         "config": home() / "config.yaml",
     }
@@ -43,7 +44,7 @@ def paths():
 
 def ensure_dirs():
     p = paths()
-    for k in ("data", "vods", "clips", "export", "live", "frames"):
+    for k in ("data", "vods", "clips", "export", "live", "frames", "jobs"):
         p[k].mkdir(parents=True, exist_ok=True)
     return p
 
@@ -122,6 +123,9 @@ DEFAULTS = {
         "chat_offset": 0,           # extra seconds to shift live chat (positive = chat is late)
         "quality": "best",
     },
+    "autopilot": {
+        "check_min": 2,             # how often an offline channel is checked
+    },
     "review": {
         "host": "127.0.0.1",
         "port": 8765,
@@ -131,6 +135,12 @@ DEFAULTS = {
         "category_id": "20",
         "max_per_day": 10,
         "made_for_kids": False,
+    },
+    "instagram": {
+        "user_id": "",              # Instagram professional account id; empty = not set up
+        "api_version": "v26.0",
+        "max_per_day": 10,
+        "share_to_feed": True,
     },
 }
 
@@ -202,6 +212,11 @@ _RULES = {
     "youtube.category_id": ("str",),
     "youtube.max_per_day": ("int", 1, 100),
     "youtube.made_for_kids": ("bool",),
+    "instagram.user_id": ("idstr",),
+    "instagram.api_version": ("str",),
+    "instagram.max_per_day": ("int", 1, 100),
+    "instagram.share_to_feed": ("bool",),
+    "autopilot.check_min": ("num", 0.05, 120),
     "game": ("str",),
 }
 
@@ -240,6 +255,11 @@ def _check(path, v):
     elif kind == "optstr":
         if v is not None and not isinstance(v, str):
             bad = "text or null"
+    elif kind == "idstr":
+        if isinstance(v, int) and not isinstance(v, bool):
+            v = str(v)
+        if not isinstance(v, str) or not re.fullmatch(r"[0-9]*", v):
+            bad = "a number in quotes (or \"\" to leave it off)"
     elif kind == "bool":
         if not isinstance(v, bool):
             bad = "true or false"
@@ -408,6 +428,10 @@ live:
 
 youtube:
   privacy: private        # private / unlisted / public
+  max_per_day: 10
+
+instagram:
+  user_id: ""             # your Instagram professional account id (README, "Instagram setup")
   max_per_day: 10
 """
 
