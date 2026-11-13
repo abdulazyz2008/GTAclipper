@@ -56,6 +56,43 @@ each clip, and Claude publishes only what you approved and only when you ask.
 in every project, copy that folder to `~/.claude/skills/`. The repository is
 also a Claude Code plugin (`.claude-plugin/plugin.json`).
 
+### Connect Claude Desktop (MCP)
+
+`clipper` is also an MCP server, so the Claude desktop app (or any MCP client)
+can run the whole workflow as tools - no terminal needed after setup:
+
+    clipper mcp-config
+
+prints the few lines to paste into Claude Desktop's config (Settings ->
+Developer -> Edit Config) and the one-line command for Claude Code. Restart
+Claude, then just talk to it:
+
+> Add the streamer kai (twitch.tv/kai, I have permission) and start the autopilot.
+
+> What clips are waiting? Judge them and render the good ones.
+
+> Open the review page. ... Publish what I approved.
+
+Claude gets 17 tools: status, add a streamer, start the autopilot, scan a VOD,
+read the moments, look at frames, save verdicts, render, open the review page,
+record your approvals, publish, export. Long work (recording, scanning,
+rendering) runs as background jobs that keep going between messages.
+Two things are enforced by the tools themselves, not left to the model:
+approvals are only recorded as the user's decision, and a real publish is
+refused unless the user confirmed it after seeing a dry run.
+
+## Autopilot
+
+    clipper autopilot
+
+watches every streamer in `config.yaml` that has a `channel`, all at once.
+Whoever goes live is recorded and clipped as moments happen; when the stream
+ends it goes back to checking (every `autopilot.check_min` minutes). Clips
+pile up in review for you to approve. Leave it running on a computer that
+stays on; `clipper status` shows what each streamer is doing. With a Claude
+API key set, clips get their hook and title automatically; without one, ask
+Claude ("judge the waiting clips") whenever you sit down to review.
+
 ## Use it by hand
 
 1. Add the streamer to `config.yaml`: a key, the credit line, their channel
@@ -77,8 +114,8 @@ also a Claude Code plugin (`.claude-plugin/plugin.json`).
 4. Publish:
 
        clipper publish --dry-run     # see what would go out
-       clipper publish               # upload approved clips to YouTube
-       clipper export                # clip files + captions for TikTok / Instagram
+       clipper publish               # YouTube Shorts + Instagram Reels (whichever is set up)
+       clipper export                # clip files + captions to post by hand (TikTok etc.)
 
 All commands: `clipper --help`. The ones Claude uses to judge clips itself are
 `scan`, `candidates --json`, `frames`, `judge` and `render`.
@@ -149,17 +186,37 @@ the stream is still going. Other sites are recorded and judged on audio only.
 Uploads default to `private` (`youtube.privacy`). Google has historically
 kept uploads from unverified API projects private until the project passes
 its audit, so check that before relying on public uploads; `clipper export`
-plus a manual upload always works. TikTok and Instagram have no upload here:
-their posting APIs need an approved app, so `export` prepares the files and
-captions for you to post.
+plus a manual upload always works.
+
+## Instagram setup (one time)
+
+Posting Reels uses Meta's official API, which needs your own Meta app:
+
+1. Your Instagram account must be a Professional (Creator or Business)
+   account linked to a Facebook Page.
+2. At developers.facebook.com create an app with Facebook Login for Business
+   and the `instagram_content_publish` permission, and generate a long-lived
+   access token for your account. While the app is in development mode it can
+   post to your own account; posting for other people needs Meta's app review.
+3. Put the account's numeric id in `config.yaml` (`instagram.user_id`) and the
+   token in a file named `instagram_token.txt` in the workspace (or the
+   `INSTAGRAM_TOKEN` environment variable). The file is in `.gitignore`.
+
+`clipper doctor` shows whether it is set up. Tokens expire (about 60 days);
+when posting stops with a token error, generate a new one.
+
+TikTok has no upload here: its posting API needs an app TikTok has audited,
+so `clipper export` prepares the file and caption for you to post.
 
 ## What has and has not been tested
 
-The test suite (`pip install -e ".[dev]"`, then `pytest`) runs 150+ checks
+The test suite (`pip install -e ".[dev]"`, then `pytest`) runs 170+ checks
 offline on synthetic footage: detection, the editor in every layout, the full
 VOD pipeline, partial downloads against a local web server, the live watcher
-on a simulated stream, the Twitch chat reader against a local chat server,
-the review page, and publishing against a stand-in for the YouTube API.
+and the autopilot on simulated streams, the Twitch chat reader against a
+local chat server, the review page, the MCP server (also checked with the
+official MCP client), and publishing against stand-ins for the YouTube and
+Instagram APIs.
 
 Not yet exercised against the real services, because the build machine had
 no access to them:
@@ -169,7 +226,7 @@ no access to them:
   streamlink` is the first thing to try when a download fails;
 - speech-to-text with a real Whisper model (captions were tested with
   stand-in words);
-- a real Claude API call and a real YouTube upload.
+- a real Claude API call, a real YouTube upload and a real Instagram post.
 
 Expect to tune `detect.min_score` on your first real streams: lower it if you
 get too few clips, raise it if you get weak ones.
@@ -186,6 +243,9 @@ get too few clips, raise it if you get weak ones.
 | `clipper/rank.py` | judgement rules; Claude API ranking; detector-score fallback |
 | `clipper/edit.py` | layouts, hook, captions, audio levelling, encoding |
 | `clipper/pipeline.py` | scan -> judge -> render, shared by everything |
+| `clipper/autopilot.py` | watches all streamers at once |
 | `clipper/review.py` | the review page |
-| `clipper/publish.py` | YouTube upload and export |
+| `clipper/publish.py` | YouTube and Instagram upload, export |
+| `clipper/mcp_server.py` | the Claude connection (MCP tools) |
+| `clipper/jobs.py` | background jobs |
 | `clipper/skill/SKILL.md` | the Claude skill |

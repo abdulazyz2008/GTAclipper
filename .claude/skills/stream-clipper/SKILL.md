@@ -106,16 +106,21 @@ file is valid; if it lists problems, fix them and run it again. Then
 `clipper render` renders the top candidates (`--top N` to change how many;
 `clipper render <id> ...` for specific ones, also to re-render after a change).
 
-## A stream that is live now
+## Live streams and the autopilot
 
 ```bash
-clipper watch --streamer <key> --wait 30      # records, clips moments as they happen
+clipper autopilot                             # every streamer with a channel, all at once
+clipper watch --streamer <key> --wait 30      # or just one stream
 clipper status                                # how it is going
 ```
 
-Run `watch` in the background; it keeps going until the stream ends (or
-`--minutes N`). `--wait 30` keeps checking for 30 minutes if the channel is
-not live yet. Live chat is read for Twitch; other sites fall back to audio.
+`autopilot` is the hands-off mode: it keeps checking every streamer in
+`config.yaml` that has a `channel`, records whoever goes live (several at
+once), cuts clips as moments happen, and goes back to checking when a stream
+ends. Run it in the background and leave it; `--minutes N` stops it after a
+while. `watch` does the same for a single stream and stops when it ends
+(`--wait 30` keeps checking for 30 minutes if the channel is not live yet).
+Live chat is read for Twitch; other sites fall back to audio.
 
 Live clips are rendered straight away so they are never lost, but with a
 plain title and no hook. When the user wants them finished, judge them the
@@ -138,15 +143,27 @@ Rendered clips wait in review. The user decides:
 Publishing, only when the user asks for it:
 
 ```bash
-clipper publish --dry-run     # show exactly what would go out
-clipper publish               # upload approved clips to YouTube
-clipper export                # or: files + captions for TikTok / Instagram
+clipper publish --dry-run     # show exactly what would go out, per platform
+clipper publish               # YouTube Shorts + Instagram Reels (whichever is set up)
+clipper publish --to youtube  # or one platform only
+clipper export                # or: files + captions to post by hand (TikTok etc.)
 ```
 
-Show the dry-run result first. YouTube upload needs the user's own
+Show the dry-run result first. YouTube needs the user's own
 `client_secret.json` (README, "YouTube setup") and opens a browser sign-in
-the first time; if that is not set up, use `export` and tell them where the
-files are. Uploads default to private.
+the first time; uploads default to private. Instagram needs their account id
+in `config.yaml` and a token (README, "Instagram setup"). If neither is set
+up, use `export` and tell them where the files are. Each platform has its own
+daily limit, and a clip is never posted twice to the same place.
+
+## If the MCP tools are connected
+
+When tools such as `status`, `start_autopilot`, `clips_to_judge`,
+`clip_frames`, `judge_clips`, `render_clips`, `review_page` and `publish` are
+available, they do the same things as the commands above and are the easier
+route - long work runs as background jobs you check with `job_status`. The
+judging rules and the user's say over approval and publishing are identical.
+`clipper mcp-config` prints how to connect them.
 
 ## When something goes wrong
 

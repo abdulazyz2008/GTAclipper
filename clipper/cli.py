@@ -108,6 +108,11 @@ def cmd_doctor(a):
     yt = mod("googleapiclient") and (config.home() / "client_secret.json").exists()
     line(yt, "YouTube upload", "" if yt else "see README 'YouTube setup'; `clipper export` works without it",
          required=False)
+    if cfg is not None:
+        from .publish import instagram_configured
+        ig = instagram_configured(cfg)
+        line(ig, "Instagram Reels posting", "" if ig else "see README 'Instagram setup'",
+             required=False)
 
     if have and cfg is not None and not a.quick:
         print("  rendering a 6-second test clip...")
